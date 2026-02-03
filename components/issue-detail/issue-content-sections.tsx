@@ -5,7 +5,9 @@ import type { JSONContent } from "@tiptap/react";
 
 interface IssueContentSectionsProps {
   issue: Doc<"issues">;
-  onUpdateDoc: (field: string) => (doc: JSONContent) => void;
+  onUpdateDoc: (
+    field: "summaryDoc" | "detailsDoc" | "impactDoc" | "stepsTakenDoc" | "nextStepsDoc"
+  ) => (doc: JSONContent) => void;
   onImageUpload: (file: File) => Promise<string | null>;
 }
 

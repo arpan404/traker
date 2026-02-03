@@ -22,6 +22,15 @@ type DraftDocs = {
   nextStepsDoc?: JSONContent;
 };
 
+const DOC_FIELDS = [
+  "summaryDoc",
+  "detailsDoc",
+  "impactDoc",
+  "stepsTakenDoc",
+  "nextStepsDoc",
+] as const;
+type DocField = (typeof DOC_FIELDS)[number];
+
 export function useIssueDetailModel({
   issueId,
   teamId,
@@ -43,6 +52,24 @@ export function useIssueDetailModel({
   const [draftPriority, setDraftPriority] = useState<IssuePriority>("Medium");
   const [draftAssigneeId, setDraftAssigneeId] = useState<string | undefined>();
   const [draftDocs, setDraftDocs] = useState<DraftDocs>({});
+  const titleDirtyRef = useRef(false);
+  const titleDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const titleLastInputAt = useRef(0);
+  const docDirtyRef = useRef<Set<DocField>>(new Set());
+  const docDebounceRef = useRef<Record<DocField, NodeJS.Timeout | null>>({
+    summaryDoc: null,
+    detailsDoc: null,
+    impactDoc: null,
+    stepsTakenDoc: null,
+    nextStepsDoc: null,
+  });
+  const docLastInputAt = useRef<Record<DocField, number>>({
+    summaryDoc: 0,
+    detailsDoc: 0,
+    impactDoc: 0,
+    stepsTakenDoc: 0,
+    nextStepsDoc: 0,
+  });
 
   const creatingRef = useRef<Promise<Id<"issues">> | null>(null);
 
@@ -87,7 +114,43 @@ export function useIssueDetailModel({
   const titleRef = useRef<HTMLTextAreaElement | null>(null);
   const commentInputRef = useRef<HTMLInputElement | null>(null);
 
-  const titleValue = issue?.title ?? draftTitle;
+  const titleValue = draftTitle;
+
+  const scheduleTitleSave = (value: string) => {
+    if (titleDebounceRef.current) {
+      clearTimeout(titleDebounceRef.current);
+    }
+    titleDebounceRef.current = setTimeout(() => {
+      void ensureIssue().then((issueIdForUpdate) => {
+        if (!issueIdForUpdate) return;
+        updateIssue({
+          issueId: issueIdForUpdate,
+          patch: { title: value },
+        });
+      });
+    }, 1200);
+  };
+
+  useEffect(() => {
+    if (!issue?.title) return;
+    if (titleDirtyRef.current) {
+      if (issue.title === draftTitle) {
+        titleDirtyRef.current = false;
+      } else {
+        const now = Date.now();
+        if (now - titleLastInputAt.current < 2000) {
+          scheduleTitleSave(draftTitle);
+        } else {
+          titleDirtyRef.current = false;
+          setDraftTitle(issue.title);
+        }
+      }
+      return;
+    }
+    if (issue.title !== draftTitle) {
+      setDraftTitle(issue.title);
+    }
+  }, [issue?.title, draftTitle]);
 
   useEffect(() => {
     if (!titleRef.current) return;
@@ -141,15 +204,58 @@ export function useIssueDetailModel({
     (resolvedTeamId && (!members || !labels)) ||
     (resolvedIssueId && (!issue || !comments || !issueLabels));
 
+  const isSameDoc = (left?: JSONContent | null, right?: JSONContent | null) =>
+    JSON.stringify(left ?? null) === JSON.stringify(right ?? null);
+
+  const scheduleDocSave = (field: DocField, doc: JSONContent) => {
+    const existing = docDebounceRef.current[field];
+    if (existing) {
+      clearTimeout(existing);
+    }
+    docDebounceRef.current[field] = setTimeout(() => {
+      void ensureIssue().then((issueIdForUpdate) => {
+        if (!issueIdForUpdate) return;
+        updateIssue({ issueId: issueIdForUpdate, patch: { [field]: doc } });
+      });
+    }, 1200);
+  };
+
+  useEffect(() => {
+    if (!issue) return;
+    setDraftDocs((prev) => {
+      const next = { ...prev };
+      for (const field of DOC_FIELDS) {
+        if (docDirtyRef.current.has(field)) {
+          const currentDoc = prev[field];
+          const serverDoc = issue[field];
+          if (isSameDoc(currentDoc, serverDoc)) {
+            docDirtyRef.current.delete(field);
+            continue;
+          }
+          const now = Date.now();
+          if (currentDoc && now - docLastInputAt.current[field] < 2000) {
+            scheduleDocSave(field, currentDoc);
+          } else {
+            docDirtyRef.current.delete(field);
+            next[field] = serverDoc;
+          }
+          continue;
+        }
+        next[field] = issue[field];
+      }
+      return next;
+    });
+  }, [issue]);
+
   const updateDocField =
-    (field: string) => async (doc: JSONContent) => {
+    (field: DocField) => async (doc: JSONContent) => {
       if (!resolvedIssueId && isDocEmpty(doc)) {
         return;
       }
+      docLastInputAt.current[field] = Date.now();
+      docDirtyRef.current.add(field);
       setDraftDocs((prev) => ({ ...prev, [field]: doc }));
-      const issueIdForUpdate = await ensureIssue();
-      if (!issueIdForUpdate) return;
-      await updateIssue({ issueId: issueIdForUpdate, patch: { [field]: doc } });
+      scheduleDocSave(field, doc);
     };
 
   const isDocEmpty = (doc?: JSONContent | null) => {
@@ -240,18 +346,14 @@ export function useIssueDetailModel({
 
   const updateTitle = (value: string, element: HTMLTextAreaElement) => {
     setDraftTitle(value);
+    titleDirtyRef.current = true;
+    titleLastInputAt.current = Date.now();
     if (!resolvedIssueId && !value.trim()) {
       element.style.height = "auto";
       element.style.height = `${element.scrollHeight}px`;
       return;
     }
-    void ensureIssue().then((issueIdForUpdate) => {
-      if (!issueIdForUpdate) return;
-      updateIssue({
-        issueId: issueIdForUpdate,
-        patch: { title: value },
-      });
-    });
+    scheduleTitleSave(value);
     element.style.height = "auto";
     element.style.height = `${element.scrollHeight}px`;
   };
@@ -315,27 +417,36 @@ export function useIssueDetailModel({
   const draftTimestamp = 0;
 
   const displayIssue =
-    issue ??
-    ({
-      _id: (resolvedIssueId ?? "draft") as Id<"issues">,
-      teamId: (resolvedTeamId ?? "draft") as Id<"teams">,
-      projectId: undefined,
-      title: draftTitle,
-      status: draftStatus,
-      priority: draftPriority,
-      type: undefined,
-      assigneeId: draftAssigneeId,
-      reporterId: user?.id ?? "draft",
-      _creationTime: draftTimestamp,
-      order: draftTimestamp,
-      summaryDoc: draftDocs.summaryDoc,
-      detailsDoc: draftDocs.detailsDoc,
-      impactDoc: draftDocs.impactDoc,
-      stepsTakenDoc: draftDocs.stepsTakenDoc,
-      nextStepsDoc: draftDocs.nextStepsDoc,
-      createdAt: draftTimestamp,
-      updatedAt: draftTimestamp,
-    } as const);
+    issue
+      ? ({
+          ...issue,
+          title: draftTitle || issue.title,
+          summaryDoc: draftDocs.summaryDoc ?? issue.summaryDoc,
+          detailsDoc: draftDocs.detailsDoc ?? issue.detailsDoc,
+          impactDoc: draftDocs.impactDoc ?? issue.impactDoc,
+          stepsTakenDoc: draftDocs.stepsTakenDoc ?? issue.stepsTakenDoc,
+          nextStepsDoc: draftDocs.nextStepsDoc ?? issue.nextStepsDoc,
+        } as const)
+      : ({
+          _id: (resolvedIssueId ?? "draft") as Id<"issues">,
+          teamId: (resolvedTeamId ?? "draft") as Id<"teams">,
+          projectId: undefined,
+          title: draftTitle,
+          status: draftStatus,
+          priority: draftPriority,
+          type: undefined,
+          assigneeId: draftAssigneeId,
+          reporterId: user?.id ?? "draft",
+          _creationTime: draftTimestamp,
+          order: draftTimestamp,
+          summaryDoc: draftDocs.summaryDoc,
+          detailsDoc: draftDocs.detailsDoc,
+          impactDoc: draftDocs.impactDoc,
+          stepsTakenDoc: draftDocs.stepsTakenDoc,
+          nextStepsDoc: draftDocs.nextStepsDoc,
+          createdAt: draftTimestamp,
+          updatedAt: draftTimestamp,
+        } as const);
 
   return {
     issue,

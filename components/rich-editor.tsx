@@ -74,11 +74,52 @@ export function RichEditor({
     },
   });
 
+  const getImageDimensions = (src: string) =>
+    new Promise<{ width: number; height: number } | null>((resolve) => {
+      const img = new window.Image();
+      img.onload = () => {
+        resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      };
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+
   const uploadImage = async (file: File) => {
     if (!editor) return;
+    const blobUrl = URL.createObjectURL(file);
+    const dims = await getImageDimensions(blobUrl);
+    editor
+      .chain()
+      .focus()
+      .setImage(
+        dims
+          ? { src: blobUrl, width: dims.width, height: dims.height }
+          : { src: blobUrl },
+      )
+      .run();
+
     const url = onImageUpload ? await onImageUpload(file) : null;
     if (!url) return;
-    editor.chain().focus().setImage({ src: url }).run();
+
+    const loaded = await getImageDimensions(url);
+    if (!loaded) return;
+
+    const { state, view } = editor;
+    const tr = state.tr;
+    let updated = false;
+    state.doc.descendants((node, pos) => {
+      if (node.type.name !== "image") return;
+      if (node.attrs?.src !== blobUrl) return;
+      tr.setNodeMarkup(pos, undefined, {
+        ...node.attrs,
+        src: url,
+      });
+      updated = true;
+    });
+    if (updated) {
+      view.dispatch(tr);
+      URL.revokeObjectURL(blobUrl);
+    }
   };
 
   useEffect(() => {
@@ -89,7 +130,7 @@ export function RichEditor({
       }
       timeoutRef.current = setTimeout(() => {
         onChange(editor.getJSON());
-      }, 600);
+      }, 1200);
     };
     editor.on("update", handleUpdate);
     return () => {
@@ -99,6 +140,7 @@ export function RichEditor({
 
   useEffect(() => {
     if (!editor) return;
+    if (editor.isFocused) return;
     const next = ensureDoc(value);
     if (JSON.stringify(next) !== JSON.stringify(editor.getJSON())) {
       editor.commands.setContent(next);
