@@ -146,14 +146,18 @@ export function BoardHeader({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="min-w-[260px] p-2 space-y-2">
                     <Select
-                      value={filters.projectId}
-                      onValueChange={(value) => onFilterChange({ projectId: value })}
+                      value={filters.projectId || "all"}
+                      onValueChange={(value) =>
+                        onFilterChange({
+                          projectId: value === "all" ? "" : value,
+                        })
+                      }
                     >
                       <SelectTrigger className="h-8 text-xs bg-transparent">
                         <SelectValue placeholder="Project" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All projects</SelectItem>
+                        <SelectItem value="all">All projects</SelectItem>
                         {projects.map((project) => (
                           <SelectItem key={project._id} value={project._id}>
                             {project.key}
@@ -162,14 +166,18 @@ export function BoardHeader({
                       </SelectContent>
                     </Select>
                     <Select
-                      value={filters.assigneeId}
-                      onValueChange={(value) => onFilterChange({ assigneeId: value })}
+                      value={filters.assigneeId || "all"}
+                      onValueChange={(value) =>
+                        onFilterChange({
+                          assigneeId: value === "all" ? "" : value,
+                        })
+                      }
                     >
                       <SelectTrigger className="h-8 text-xs bg-transparent">
                         <SelectValue placeholder="Assignee" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All assignees</SelectItem>
+                        <SelectItem value="all">All assignees</SelectItem>
                         {members.map((member) => (
                           <SelectItem key={member.userId} value={member.userId}>
                             {member.fullName ?? member.userId}
@@ -178,14 +186,18 @@ export function BoardHeader({
                       </SelectContent>
                     </Select>
                     <Select
-                      value={filters.priority}
-                      onValueChange={(value) => onFilterChange({ priority: value })}
+                      value={filters.priority || "all"}
+                      onValueChange={(value) =>
+                        onFilterChange({
+                          priority: value === "all" ? "" : value,
+                        })
+                      }
                     >
                       <SelectTrigger className="h-8 text-xs bg-transparent">
                         <SelectValue placeholder="Priority" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All priorities</SelectItem>
+                        <SelectItem value="all">All priorities</SelectItem>
                         {ISSUE_PRIORITIES.map((priority) => (
                           <SelectItem key={priority} value={priority}>
                             {priority}
@@ -194,14 +206,18 @@ export function BoardHeader({
                       </SelectContent>
                     </Select>
                     <Select
-                      value={filters.labelId}
-                      onValueChange={(value) => onFilterChange({ labelId: value })}
+                      value={filters.labelId || "all"}
+                      onValueChange={(value) =>
+                        onFilterChange({
+                          labelId: value === "all" ? "" : value,
+                        })
+                      }
                     >
                       <SelectTrigger className="h-8 text-xs bg-transparent">
                         <SelectValue placeholder="Label" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All labels</SelectItem>
+                        <SelectItem value="all">All labels</SelectItem>
                         {labels.map((label) => (
                           <SelectItem key={label._id} value={label._id}>
                             {label.name}
