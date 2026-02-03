@@ -43,12 +43,14 @@ export default function PersonalTodosPage() {
             onToggle={(todoId) => model.toggleStatus({ todoId })}
             onDropOnCard={model.handleDropOnCard}
             onNew={model.openCreate}
+            onDelete={model.handleDelete}
           />
         ) : (
           <TodosTable
             variant="personal"
             todos={model.todos}
             onToggle={(todoId) => model.toggleStatus({ todoId })}
+            onDelete={model.handleDelete}
           />
         )}
       </div>

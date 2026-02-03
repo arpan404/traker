@@ -14,6 +14,7 @@ type PersonalProps = {
   variant: "personal";
   todos: Todo[];
   onToggle: (todoId: Id<"todos">) => void;
+  onDelete: (todoId: Id<"todos">) => void;
 };
 
 type TeamProps = {
@@ -23,6 +24,7 @@ type TeamProps = {
   memberLookup: Map<string, { name: string; avatar?: string }>;
   onToggle: (todoId: Id<"todos">) => void;
   onAssign: (todoId: Id<"todos">, assigneeId: string) => void;
+  onDelete: (todoId: Id<"todos">) => void;
 };
 
 type TodosTableProps = PersonalProps | TeamProps;
@@ -34,13 +36,16 @@ export function TodosTable(props: TodosTableProps) {
     <div className="canvas-panel overflow-hidden border-[var(--border)] bg-[var(--card)]">
       <div
         className={`grid gap-4 border-b border-[var(--border)] bg-[var(--muted)] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--muted-foreground)] ${
-          hasAssignee ? "grid-cols-[1fr_160px_120px_160px]" : "grid-cols-[1fr_120px_120px]"
+          hasAssignee
+            ? "grid-cols-[1fr_160px_120px_160px_120px]"
+            : "grid-cols-[1fr_120px_120px_120px]"
         }`}
       >
         <span>Task</span>
         {hasAssignee ? <span>Assignee</span> : null}
         <span>Status</span>
         <span>Due Date</span>
+        <span>Actions</span>
       </div>
       <div className="divide-y divide-[var(--border)]">
         {props.todos.length === 0 ? (
@@ -52,7 +57,9 @@ export function TodosTable(props: TodosTableProps) {
             <div
               key={todo._id}
               className={`grid gap-4 px-4 py-3 items-center group hover:bg-[var(--muted)] transition-colors cursor-default ${
-                hasAssignee ? "grid-cols-[1fr_160px_120px_160px]" : "grid-cols-[1fr_120px_120px]"
+                hasAssignee
+                  ? "grid-cols-[1fr_160px_120px_160px_120px]"
+                  : "grid-cols-[1fr_120px_120px_120px]"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -105,6 +112,14 @@ export function TodosTable(props: TodosTableProps) {
                   ? new Date(todo.dueDate).toLocaleDateString()
                   : "—"}
               </span>
+              <div>
+                <button
+                  className="rounded-md border border-[var(--border)] px-2 py-1 text-[10px] font-bold uppercase text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--foreground)]/40 transition-colors"
+                  onClick={() => props.onDelete(todo._id)}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           ))
         )}

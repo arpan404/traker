@@ -61,6 +61,7 @@ export function useTeamTodosModel() {
   const updateTodo = useMutation(api.todos.update);
   const toggleStatus = useMutation(api.todos.toggleStatus);
   const reorderTodo = useMutation(api.todos.reorder);
+  const deleteTodo = useMutation(api.todos.remove);
 
   const memberLookup = useMemo(() => {
     const map = new Map<string, { name: string; avatar?: string }>();
@@ -143,6 +144,8 @@ export function useTeamTodosModel() {
       },
     });
 
+  const handleDelete = (todoId: Id<"todos">) => deleteTodo({ todoId });
+
   return {
     user,
     team,
@@ -165,6 +168,7 @@ export function useTeamTodosModel() {
     handleDrop,
     handleDropOnCard,
     handleCreate,
+    handleDelete,
     isReady,
   };
 }

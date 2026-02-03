@@ -7,6 +7,15 @@ import { IssueDetailSheet } from "@/components/board/issue-detail-sheet";
 import { IssuesTable } from "@/components/board/issues-table";
 import { KanbanBoard } from "@/components/board/kanban-board";
 import { useBoardModel } from "@/hooks/use-board-model";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 export default function BoardPage() {
   const model = useBoardModel();
@@ -62,6 +71,8 @@ export default function BoardPage() {
                 onDropIssueOnCard={model.handleDropOnCard}
                 onOpenIssue={model.openIssue}
                 onNewIssue={model.openCreate}
+                onAddComment={model.openComment}
+                onDeleteIssue={model.handleDeleteIssue}
               />
             </div>
           </div>
@@ -71,6 +82,8 @@ export default function BoardPage() {
               issues={model.filteredIssues}
               membersByUserId={model.membersByUserId}
               onOpenIssue={model.openIssue}
+              onAddComment={model.openComment}
+              onDelete={model.handleDeleteIssue}
             />
           </div>
         )}
@@ -83,6 +96,46 @@ export default function BoardPage() {
           onCreated={model.handleIssueCreated}
           onClose={model.closeIssue}
         />
+
+        <Dialog
+          open={model.commentOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              model.closeComment();
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Add comment</DialogTitle>
+              <DialogDescription>
+                Leave a quick note on this issue.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-2">
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Comment
+              </label>
+              <textarea
+                className="min-h-[90px] w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm text-foreground outline-none"
+                placeholder="Add a note..."
+                value={model.commentText}
+                onChange={(event) => model.setCommentText(event.target.value)}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => model.closeComment()}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => model.handleAddComment()}
+                disabled={!model.commentText.trim()}
+              >
+                Add comment
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </section>
   );

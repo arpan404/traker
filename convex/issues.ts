@@ -56,7 +56,25 @@ export const list = query({
       issues = issues.filter((issue) => issue.title.toLowerCase().includes(term));
     }
 
-    return issues.sort(
+    const issueIds = new Set(issues.map((issue) => issue._id));
+    const commentCounts = new Map<string, number>();
+    if (issueIds.size > 0) {
+      const comments = await ctx.db.query("comments").collect();
+      for (const comment of comments) {
+        if (!issueIds.has(comment.issueId)) continue;
+        commentCounts.set(
+          comment.issueId,
+          (commentCounts.get(comment.issueId) ?? 0) + 1,
+        );
+      }
+    }
+
+    const enriched = issues.map((issue) => ({
+      ...issue,
+      commentCount: commentCounts.get(issue._id) ?? 0,
+    }));
+
+    return enriched.sort(
       (a, b) =>
         (a.order ?? a.createdAt) - (b.order ?? b.createdAt),
     );
@@ -217,6 +235,50 @@ export const update = mutation({
         },
       });
     }
+  },
+});
+
+export const remove = mutation({
+  args: { issueId: v.id("issues") },
+  handler: async (ctx, args) => {
+    const issue = await ctx.db.get(args.issueId);
+    if (!issue) {
+      throw new ConvexError("Issue not found");
+    }
+    const { userId } = await requireRole(ctx, issue.teamId, "MEMBER");
+
+    const labelLinks = await ctx.db
+      .query("issueLabels")
+      .withIndex("by_issueId", (q) => q.eq("issueId", args.issueId))
+      .collect();
+    await Promise.all(labelLinks.map((link) => ctx.db.delete(link._id)));
+
+    const comments = await ctx.db
+      .query("comments")
+      .withIndex("by_issueId", (q) => q.eq("issueId", args.issueId))
+      .collect();
+    await Promise.all(comments.map((comment) => ctx.db.delete(comment._id)));
+
+    const files = await ctx.db
+      .query("files")
+      .withIndex("by_issueId", (q) => q.eq("issueId", args.issueId))
+      .collect();
+    await Promise.all(files.map((file) => ctx.db.delete(file._id)));
+
+    const issueEvents = await ctx.db
+      .query("issueEvents")
+      .withIndex("by_issueId", (q) => q.eq("issueId", args.issueId))
+      .collect();
+    await Promise.all(issueEvents.map((event) => ctx.db.delete(event._id)));
+
+    await ctx.db.delete(args.issueId);
+
+    await insertTeamEvent(ctx, {
+      teamId: issue.teamId,
+      actorId: userId,
+      type: "ISSUE_DELETED",
+      payload: { issueId: issue._id, title: issue.title },
+    });
   },
 });
 

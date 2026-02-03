@@ -11,7 +11,7 @@ export type IssuePriority = (typeof ISSUE_PRIORITIES)[number];
 export type BoardView = (typeof ISSUE_TABS)[number]["id"];
 export type TodoStatus = (typeof TODO_STATUSES)[number];
 
-export type Issue = Doc<"issues">;
+export type Issue = Doc<"issues"> & { commentCount?: number };
 export type Member = Doc<"teamMembers">;
 export type Project = Doc<"projects">;
 export type Label = Doc<"labels">;

@@ -35,6 +35,11 @@ export function useBoardModel() {
   );
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createStatus, setCreateStatus] = useState<IssueStatus>("Untriaged");
+  const [commentIssueId, setCommentIssueId] = useState<Id<"issues"> | null>(
+    null,
+  );
+  const [commentOpen, setCommentOpen] = useState(false);
+  const [commentText, setCommentText] = useState("");
 
   const team = useQuery(
     api.teams.getBySlug,
@@ -72,6 +77,8 @@ export function useBoardModel() {
   );
 
   const reorderIssue = useMutation(api.issues.reorder);
+  const deleteIssue = useMutation(api.issues.remove);
+  const createComment = useMutation(api.comments.create);
   const membersByUserId = useMemo(() => {
     return new Map((members ?? []).map((member) => [member.userId, member]));
   }, [members]);
@@ -188,6 +195,43 @@ export function useBoardModel() {
     setSelectedIssueId(issueId);
   }, []);
 
+  const openComment = useCallback((issueId: Id<"issues">) => {
+    setCommentIssueId(issueId);
+    setCommentText("");
+    setCommentOpen(true);
+  }, []);
+
+  const closeComment = useCallback(() => {
+    setCommentOpen(false);
+  }, []);
+
+  const handleAddComment = useCallback(async () => {
+    if (!commentIssueId) return;
+    const text = commentText.trim();
+    if (!text) return;
+    await createComment({
+      issueId: commentIssueId,
+      bodyDoc: {
+        type: "doc",
+        content: [{ type: "paragraph", content: [{ type: "text", text }] }],
+      },
+    });
+    setCommentText("");
+    setCommentOpen(false);
+  }, [commentIssueId, commentText, createComment]);
+
+  const handleDeleteIssue = useCallback(async (issueId: Id<"issues">) => {
+    await deleteIssue({ issueId });
+    if (selectedIssueId === issueId) {
+      setSelectedIssueId(null);
+      setIsCreateOpen(false);
+    }
+    if (commentIssueId === issueId) {
+      setCommentOpen(false);
+      setCommentIssueId(null);
+    }
+  }, [commentIssueId, deleteIssue, selectedIssueId]);
+
   const isLoading =
     isConvexLoading ||
     !isAuthenticated ||
@@ -215,6 +259,15 @@ export function useBoardModel() {
     handleIssueCreated,
     handleDrop,
     handleDropOnCard,
+    commentIssueId,
+    commentOpen,
+    setCommentOpen,
+    commentText,
+    setCommentText,
+    openComment,
+    closeComment,
+    handleAddComment,
+    handleDeleteIssue,
     isLoading,
     team,
     members: members ?? [],

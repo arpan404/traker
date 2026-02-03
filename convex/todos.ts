@@ -328,3 +328,34 @@ export const reorder = mutation({
     }
   },
 });
+
+export const remove = mutation({
+  args: { todoId: v.id("todos") },
+  handler: async (ctx, args) => {
+    const todo = await ctx.db.get(args.todoId);
+    if (!todo) {
+      throw new ConvexError("Todo not found");
+    }
+    let actorId: string | undefined;
+    if (todo.scope === "TEAM") {
+      const auth = await requireRole(ctx, todo.teamId!, "MEMBER");
+      actorId = auth.userId;
+    } else {
+      const userId = await getCurrentUserId(ctx);
+      if (todo.ownerUserId !== userId) {
+        throw new ConvexError("Unauthorized");
+      }
+    }
+
+    await ctx.db.delete(todo._id);
+
+    if (todo.scope === "TEAM") {
+      await insertTeamEvent(ctx, {
+        teamId: todo.teamId!,
+        actorId,
+        type: "TODO_DELETED",
+        payload: { todoId: todo._id, title: todo.title },
+      });
+    }
+  },
+});

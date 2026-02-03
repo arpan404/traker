@@ -1,4 +1,4 @@
-import { Calendar, CheckCircle2, Circle } from "lucide-react";
+import { Calendar, CheckCircle2, Circle, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +24,7 @@ type PersonalProps = {
   isDropTarget?: boolean;
   onDragEnter?: () => void;
   onDragLeave?: () => void;
+  onDelete: (todoId: Id<"todos">) => void;
 };
 
 type TeamProps = {
@@ -38,6 +39,7 @@ type TeamProps = {
   isDropTarget?: boolean;
   onDragEnter?: () => void;
   onDragLeave?: () => void;
+  onDelete: (todoId: Id<"todos">) => void;
 };
 
 type TodoCardProps = PersonalProps | TeamProps;
@@ -134,6 +136,18 @@ export function TodoCard(props: TodoCardProps) {
                 ))}
               </SelectContent>
             </Select>
+            <Button
+              variant="outline"
+              className="text-destructive hover:text-destructive"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                props.onDelete(todo._id);
+              }}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -190,6 +204,20 @@ export function TodoCard(props: TodoCardProps) {
               <span>{dueLabel ? `Due ${dueLabel}` : "No due date"}</span>
             </div>
             <Badge className={tone[todo.status]}>{todo.status}</Badge>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              className="text-destructive hover:text-destructive"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                props.onDelete(todo._id);
+              }}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </Button>
           </div>
         </div>
       </CardContent>

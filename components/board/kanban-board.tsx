@@ -17,6 +17,8 @@ interface KanbanBoardProps {
   ) => void;
   onOpenIssue: (issueId: Id<"issues">) => void;
   onNewIssue: (status: IssueStatus) => void;
+  onAddComment?: (issueId: Id<"issues">) => void;
+  onDeleteIssue?: (issueId: Id<"issues">) => void;
 }
 
 export function KanbanBoard({
@@ -27,6 +29,8 @@ export function KanbanBoard({
   onDropIssueOnCard,
   onOpenIssue,
   onNewIssue,
+  onAddComment,
+  onDeleteIssue,
 }: KanbanBoardProps) {
   const [dropTargetId, setDropTargetId] = useState<Id<"issues"> | null>(null);
 
@@ -77,6 +81,8 @@ export function KanbanBoard({
                   onDropOnCard={onDropIssueOnCard}
                   onDragEnter={() => setDropTargetId(issue._id)}
                   onDragLeave={() => setDropTargetId((current) => (current === issue._id ? null : current))}
+                  onAddComment={onAddComment}
+                  onDelete={onDeleteIssue}
                 />
               ))}
               <button

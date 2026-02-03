@@ -40,6 +40,7 @@ export function usePersonalTodosModel() {
   const toggleStatus = useMutation(api.todos.toggleStatus);
   const updateTodoStatus = useMutation(api.todos.update);
   const reorderTodo = useMutation(api.todos.reorder);
+  const deleteTodo = useMutation(api.todos.remove);
 
   const safeTodos: Todo[] = todos ?? [];
   const todosByStatus = useMemo(() => {
@@ -96,6 +97,8 @@ export function usePersonalTodosModel() {
     await reorderTodo({ todoId, status, beforeId: targetId });
   };
 
+  const handleDelete = (todoId: Id<"todos">) => deleteTodo({ todoId });
+
   return {
     isReady,
     view,
@@ -114,5 +117,6 @@ export function usePersonalTodosModel() {
     handleDragStart,
     handleDrop,
     handleDropOnCard,
+    handleDelete,
   };
 }

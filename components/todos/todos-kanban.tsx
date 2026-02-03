@@ -14,6 +14,7 @@ type PersonalProps = {
   onToggle: (todoId: Id<"todos">) => void;
   onNew: (status: TodoStatus) => void;
   onDropOnCard: (targetId: Id<"todos">, status: TodoStatus, event: DragEvent) => void;
+  onDelete: (todoId: Id<"todos">) => void;
 };
 
 type TeamProps = {
@@ -27,6 +28,7 @@ type TeamProps = {
   onDrop: (status: TodoStatus, event: DragEvent) => void;
   onDragStart: (event: DragEvent, todoId: Id<"todos">) => void;
   onDropOnCard: (targetId: Id<"todos">, status: TodoStatus, event: DragEvent) => void;
+  onDelete: (todoId: Id<"todos">) => void;
 };
 
 type TodosKanbanProps = PersonalProps | TeamProps;
@@ -82,6 +84,7 @@ export function TodosKanban(props: TodosKanbanProps) {
                       onDropOnCard={(event, targetId) =>
                         props.onDropOnCard(targetId, status, event)
                       }
+                      onDelete={props.onDelete}
                       isDropTarget={dropTargetId === todo._id}
                       onDragEnter={() => setDropTargetId(todo._id)}
                       onDragLeave={() =>
@@ -100,6 +103,7 @@ export function TodosKanban(props: TodosKanbanProps) {
                       onDropOnCard={(event, targetId) =>
                         props.onDropOnCard(targetId, status, event)
                       }
+                      onDelete={props.onDelete}
                       isDropTarget={dropTargetId === todo._id}
                       onDragEnter={() => setDropTargetId(todo._id)}
                       onDragLeave={() =>

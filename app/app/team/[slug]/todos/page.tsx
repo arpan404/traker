@@ -49,6 +49,7 @@ export default function TeamTodosPage() {
           onDrop={model.handleDrop}
           onDropOnCard={model.handleDropOnCard}
           onNew={model.openCreate}
+          onDelete={model.handleDelete}
         />
       ) : (
         <TodosTable
@@ -58,6 +59,7 @@ export default function TeamTodosPage() {
           memberLookup={model.memberLookup}
           onToggle={(todoId) => model.toggleStatus({ todoId })}
           onAssign={model.setAssignee}
+          onDelete={model.handleDelete}
         />
       )}
 
