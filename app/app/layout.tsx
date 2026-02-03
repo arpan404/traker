@@ -12,11 +12,13 @@ import { SettingsSheet } from "@/components/app-layout/settings-sheet";
 import { PresenceSheet } from "@/components/app-layout/presence-sheet";
 import { CursorOverlay } from "@/components/app-layout/cursor-overlay";
 import { useAppLayoutModel } from "@/hooks/use-app-layout-model";
+import Link from "next/link";
 
 function AppLayoutInner({ children }: { children: ReactNode }) {
   const { user } = useUser();
   const {
     slug,
+    team,
     activeMembers,
     members,
     isAdmin,
@@ -41,6 +43,28 @@ function AppLayoutInner({ children }: { children: ReactNode }) {
     historyLabelForEvent,
     statusColorClass,
   } = useAppLayoutModel(user?.id);
+
+  if (slug && team === null) {
+    return (
+      <div className="min-h-screen bg-sidebar text-foreground flex items-center justify-center px-6">
+        <div className="glass-panel w-full max-w-md p-6 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-muted-foreground">
+            Team Not Found
+          </p>
+          <h1 className="mt-3 text-2xl font-bold">This team doesn’t exist</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The workspace you’re trying to access isn’t available. Pick another team.
+          </p>
+          <Link
+            href="/app"
+            className="mt-6 inline-flex h-9 items-center justify-center rounded-md bg-[var(--accent)]/80 px-4 text-sm font-semibold text-white transition-all hover:bg-[var(--accent)]"
+          >
+            Back to teams
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-sidebar text-foreground">

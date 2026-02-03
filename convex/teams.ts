@@ -1,4 +1,4 @@
-import { ConvexError, v } from "convex/values";
+import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getCurrentUserId, requireTeamMember } from "./lib/auth";
 
@@ -77,7 +77,7 @@ export const getBySlug = query({
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))
       .unique();
     if (!team) {
-      throw new ConvexError("Team not found");
+      return null;
     }
 
     await requireTeamMember(ctx, team._id);
@@ -90,7 +90,7 @@ export const get = query({
   handler: async (ctx, args) => {
     const team = await ctx.db.get(args.teamId);
     if (!team) {
-      throw new ConvexError("Team not found");
+      return null;
     }
     await requireTeamMember(ctx, team._id);
     return team;
