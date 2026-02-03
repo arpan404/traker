@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as activity from "../activity.js";
 import type * as comments from "../comments.js";
 import type * as files from "../files.js";
 import type * as invites from "../invites.js";
@@ -17,11 +18,14 @@ import type * as labels from "../labels.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_issueEvents from "../lib/issueEvents.js";
 import type * as lib_roles from "../lib/roles.js";
+import type * as lib_teamEvents from "../lib/teamEvents.js";
 import type * as lib_types from "../lib/types.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as members from "../members.js";
+import type * as presence from "../presence.js";
 import type * as projects from "../projects.js";
 import type * as teams from "../teams.js";
+import type * as todos from "../todos.js";
 
 import type {
   ApiFromModules,
@@ -30,6 +34,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  activity: typeof activity;
   comments: typeof comments;
   files: typeof files;
   invites: typeof invites;
@@ -39,11 +44,14 @@ declare const fullApi: ApiFromModules<{
   "lib/auth": typeof lib_auth;
   "lib/issueEvents": typeof lib_issueEvents;
   "lib/roles": typeof lib_roles;
+  "lib/teamEvents": typeof lib_teamEvents;
   "lib/types": typeof lib_types;
   "lib/validators": typeof lib_validators;
   members: typeof members;
+  presence: typeof presence;
   projects: typeof projects;
   teams: typeof teams;
+  todos: typeof todos;
 }>;
 
 /**

@@ -3,6 +3,7 @@ import { mutation, query } from "./_generated/server";
 import { ConvexError } from "convex/values";
 import { requireRole, requireTeamMember } from "./lib/auth";
 import { logIssueEvent } from "./lib/issueEvents";
+import { insertTeamEvent } from "./lib/teamEvents";
 
 export const list = query({
   args: { issueId: v.id("issues") },
@@ -44,6 +45,12 @@ export const create = mutation({
       actorId: userId,
       type: "COMMENTED",
       payload: { commentId },
+    });
+    await insertTeamEvent(ctx, {
+      teamId: issue.teamId,
+      actorId: userId,
+      type: "ISSUE_COMMENTED",
+      payload: { issueId: issue._id, commentId },
     });
 
     return commentId;

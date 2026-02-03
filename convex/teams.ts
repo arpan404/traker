@@ -1,6 +1,5 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { ConvexError } from "convex/values";
 import { getCurrentUserId, requireTeamMember } from "./lib/auth";
 
 export const listForUser = query({
@@ -35,18 +34,26 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getCurrentUserId(ctx);
-    const existing = await ctx.db
-      .query("teams")
-      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
-      .unique();
-    if (existing) {
-      throw new ConvexError("Team slug already exists");
+    const base = (args.slug || args.name)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "") || "team";
+    let slug = base;
+    let suffix = 1;
+    while (
+      await ctx.db
+        .query("teams")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .unique()
+    ) {
+      slug = `${base}-${suffix}`;
+      suffix += 1;
     }
 
     const now = Date.now();
     const teamId = await ctx.db.insert("teams", {
       name: args.name,
-      slug: args.slug,
+      slug,
       ownerUserId: userId,
       createdAt: now,
     });

@@ -1,6 +1,11 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { issuePriorityValidator, issueStatusValidator, roleValidator } from "./lib/validators";
+import {
+  issuePriorityValidator,
+  issueStatusValidator,
+  roleValidator,
+  todoStatusValidator,
+} from "./lib/validators";
 
 export default defineSchema({
   teams: defineTable({
@@ -14,6 +19,8 @@ export default defineSchema({
     teamId: v.id("teams"),
     userId: v.string(),
     role: roleValidator,
+    fullName: v.optional(v.string()),
+    avatarUrl: v.optional(v.string()),
     joinedAt: v.number(),
   })
     .index("by_teamId", ["teamId"])
@@ -47,8 +54,10 @@ export default defineSchema({
     title: v.string(),
     status: issueStatusValidator,
     priority: issuePriorityValidator,
+    type: v.optional(v.string()),
     assigneeId: v.optional(v.string()),
     reporterId: v.string(),
+    order: v.optional(v.number()),
     summaryDoc: v.optional(v.any()),
     detailsDoc: v.optional(v.any()),
     impactDoc: v.optional(v.any()),
@@ -82,6 +91,7 @@ export default defineSchema({
   })
     .index("by_issueId", ["issueId"])
     .index("by_labelId", ["labelId"])
+    .index("by_teamId", ["teamId"])
     .index("by_issueId_labelId", ["issueId", "labelId"]),
 
   issueEvents: defineTable({
@@ -105,4 +115,47 @@ export default defineSchema({
     .index("by_issueId", ["issueId"])
     .index("by_teamId", ["teamId"])
     .index("by_storageId", ["storageId"]),
+
+  todos: defineTable({
+    scope: v.union(v.literal("TEAM"), v.literal("PERSONAL")),
+    teamId: v.optional(v.id("teams")),
+    ownerUserId: v.optional(v.string()),
+    title: v.string(),
+    status: todoStatusValidator,
+    assigneeId: v.optional(v.string()),
+    dueDate: v.optional(v.number()),
+    order: v.optional(v.number()),
+    createdByUserId: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_teamId", ["teamId"])
+    .index("by_ownerUserId", ["ownerUserId"])
+    .index("by_teamId_status", ["teamId", "status"])
+    .index("by_ownerUserId_status", ["ownerUserId", "status"]),
+
+  teamPresence: defineTable({
+    teamId: v.id("teams"),
+    userId: v.string(),
+    lastSeen: v.number(),
+    activity: v.optional(v.string()),
+    location: v.optional(v.string()),
+    cursorX: v.optional(v.number()),
+    cursorY: v.optional(v.number()),
+    isEditing: v.optional(v.boolean()),
+    editingTarget: v.optional(v.string()),
+  })
+    .index("by_teamId", ["teamId"])
+    .index("by_userId", ["userId"])
+    .index("by_teamId_userId", ["teamId", "userId"]),
+
+  teamEvents: defineTable({
+    teamId: v.id("teams"),
+    actorId: v.optional(v.string()),
+    type: v.string(),
+    payload: v.any(),
+    createdAt: v.number(),
+  })
+    .index("by_teamId", ["teamId"])
+    .index("by_teamId_createdAt", ["teamId", "createdAt"]),
 });

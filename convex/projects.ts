@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { ConvexError } from "convex/values";
 import { requireRole, requireTeamMember } from "./lib/auth";
+import { insertTeamEvent } from "./lib/teamEvents";
 
 export const list = query({
   args: { teamId: v.id("teams") },
@@ -21,7 +22,7 @@ export const create = mutation({
     key: v.string(),
   },
   handler: async (ctx, args) => {
-    await requireRole(ctx, args.teamId, "ADMIN");
+    const { userId } = await requireRole(ctx, args.teamId, "ADMIN");
     const existing = await ctx.db
       .query("projects")
       .withIndex("by_teamId_key", (q) =>
@@ -31,11 +32,18 @@ export const create = mutation({
     if (existing) {
       throw new ConvexError("Project key already exists");
     }
-    return ctx.db.insert("projects", {
+    const projectId = await ctx.db.insert("projects", {
       teamId: args.teamId,
       name: args.name,
       key: args.key,
       createdAt: Date.now(),
     });
+    await insertTeamEvent(ctx, {
+      teamId: args.teamId,
+      actorId: userId,
+      type: "PROJECT_CREATED",
+      payload: { projectId, name: args.name, key: args.key },
+    });
+    return projectId;
   },
 });

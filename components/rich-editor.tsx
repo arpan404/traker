@@ -6,6 +6,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
+import { cn } from "@/lib/utils";
 
 type RichEditorProps = {
   value?: JSONContent | null;
@@ -13,6 +14,8 @@ type RichEditorProps = {
   editable?: boolean;
   onChange?: (doc: JSONContent) => void;
   onImageUpload?: (file: File) => Promise<string | null>;
+  onFocus?: () => void;
+  onBlur?: () => void;
 };
 
 const ensureDoc = (value?: JSONContent | null): JSONContent => {
@@ -26,6 +29,8 @@ export function RichEditor({
   editable = true,
   onChange,
   onImageUpload,
+  onFocus,
+  onBlur,
 }: RichEditorProps) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -43,8 +48,12 @@ export function RichEditor({
     editable,
     editorProps: {
       attributes: {
-        class:
-          "min-h-[120px] rounded-md border border-[#e9e9e7] bg-white px-3 py-2 text-sm text-[#2f3437] focus:outline-none",
+        class: cn(
+          "text-sm text-[var(--muted-foreground)] focus:outline-none transition-all",
+          editable
+            ? "min-h-[44px] py-1 placeholder:opacity-30 bg-transparent border-none shadow-none cursor-text"
+            : "min-h-0 p-0",
+        ),
       },
       handlePaste: (_view, event) => {
         if (!onImageUpload) return false;
@@ -96,5 +105,14 @@ export function RichEditor({
     }
   }, [editor, value]);
 
-  return <EditorContent editor={editor} />;
+  return (
+    <div
+      onFocusCapture={onFocus}
+      onBlurCapture={onBlur}
+      onMouseDownCapture={onFocus}
+      className="tiptap-wrapper"
+    >
+      <EditorContent editor={editor} className="tiptap" />
+    </div>
+  );
 }

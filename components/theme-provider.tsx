@@ -12,23 +12,23 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
-
-  useEffect(() => {
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window === "undefined") return "light";
     const stored = window.localStorage.getItem("traker-theme");
     if (stored === "light" || stored === "dark") {
-      setTheme(stored);
-      document.documentElement.setAttribute("data-theme", stored);
-      return;
+      return stored;
     }
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const next = prefersDark ? "dark" : "light";
-    setTheme(next);
-    document.documentElement.setAttribute("data-theme", next);
-  }, []);
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
+    return prefersDark ? "dark" : "light";
+  });
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
+    const root = window.document.documentElement;
+    root.classList.remove("light", "dark");
+    root.classList.add(theme);
+    root.setAttribute("data-theme", theme);
     window.localStorage.setItem("traker-theme", theme);
   }, [theme]);
 
@@ -42,7 +42,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeContext.Provider value={value}>
-      <div data-theme={theme} className="min-h-screen">
+      <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300">
         {children}
       </div>
     </ThemeContext.Provider>

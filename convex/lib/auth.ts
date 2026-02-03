@@ -15,7 +15,14 @@ export const getCurrentUserId = async (ctx: Ctx) => {
 };
 
 export const requireTeamMember = async (ctx: Ctx, teamId: Id<"teams">) => {
-  const userId = await getCurrentUserId(ctx);
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity?.subject) {
+    throw new ConvexError("Unauthenticated");
+  }
+  const userId = identity.subject;
+  const fullName = identity.name;
+  const avatarUrl = identity.pictureUrl;
+
   const member = await ctx.db
     .query("teamMembers")
     .withIndex("by_teamId_userId", (q) =>
@@ -26,6 +33,12 @@ export const requireTeamMember = async (ctx: Ctx, teamId: Id<"teams">) => {
   if (!member) {
     throw new ConvexError("Not a team member");
   }
+
+  // Sync metadata if changed (only in mutation context)
+  if ("patch" in ctx.db && (member.fullName !== fullName || member.avatarUrl !== avatarUrl)) {
+    await ctx.db.patch(member._id, { fullName, avatarUrl });
+  }
+
   return { userId, member };
 };
 

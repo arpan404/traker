@@ -17,6 +17,17 @@ export const listByIssue = query({
   },
 });
 
+export const listByTeam = query({
+  args: { teamId: v.id("teams") },
+  handler: async (ctx, args) => {
+    await requireTeamMember(ctx, args.teamId);
+    return ctx.db
+      .query("issueLabels")
+      .withIndex("by_teamId", (q) => q.eq("teamId", args.teamId))
+      .collect();
+  },
+});
+
 export const toggle = mutation({
   args: {
     teamId: v.id("teams"),

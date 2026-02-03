@@ -148,9 +148,21 @@ export const list = query({
   args: { teamId: v.id("teams") },
   handler: async (ctx, args) => {
     await requireRole(ctx, args.teamId, "ADMIN");
-    return ctx.db
+    const now = Date.now();
+    const invites = await ctx.db
       .query("teamInvites")
       .withIndex("by_teamId", (q) => q.eq("teamId", args.teamId))
       .collect();
+    return invites.filter((invite) => !invite.acceptedAt && invite.expiresAt > now);
+  },
+});
+
+export const cancel = mutation({
+  args: { inviteId: v.id("teamInvites") },
+  handler: async (ctx, args) => {
+    const invite = await ctx.db.get(args.inviteId);
+    if (!invite) return;
+    await requireRole(ctx, invite.teamId, "ADMIN");
+    await ctx.db.delete(args.inviteId);
   },
 });
