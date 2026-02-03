@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Suspense } from "react";
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import { RedirectToSignIn } from "@clerk/nextjs";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -12,7 +13,7 @@ import { PresenceSheet } from "@/components/app-layout/presence-sheet";
 import { CursorOverlay } from "@/components/app-layout/cursor-overlay";
 import { useAppLayoutModel } from "@/hooks/use-app-layout-model";
 
-export default function AppLayout({ children }: { children: ReactNode }) {
+function AppLayoutInner({ children }: { children: ReactNode }) {
   const { user } = useUser();
   const {
     slug,
@@ -101,5 +102,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       <CursorOverlay activeMembers={activeMembers} currentUserId={user?.id} />
     </div>
+  );
+}
+
+export default function AppLayout({ children }: { children: ReactNode }) {
+  return (
+    <Suspense
+      fallback={<div className="min-h-screen bg-sidebar text-foreground" />}
+    >
+      <AppLayoutInner>{children}</AppLayoutInner>
+    </Suspense>
   );
 }

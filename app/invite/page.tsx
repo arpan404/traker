@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/convex/_generated/api";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
-export default function InvitePage() {
+function InvitePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
@@ -114,5 +114,27 @@ export default function InvitePage() {
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+export default function InvitePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Loading invite...</CardTitle>
+              <CardDescription>Preparing the invite details.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center py-6">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </div>
+      }
+    >
+      <InvitePageInner />
+    </Suspense>
   );
 }

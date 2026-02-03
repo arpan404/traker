@@ -17,7 +17,7 @@ type PresenceOverride = {
 };
 
 const usePresenceTracking = (
-  teamId: string | undefined,
+  teamId: Id<"teams"> | undefined,
   activityLabel: string,
   pathname: string | null,
 ) => {
