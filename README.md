@@ -45,3 +45,5 @@ https://docs.convex.dev/auth/clerk
 ## Notes
 
 If you add new Convex functions, re-run `npx convex dev` (or deploy) so the API updates.
+
+Built in two days for personal use. Feel free to use it—no paid subscriptions required. The free tiers of Vercel and Convex are enough for a small team.
